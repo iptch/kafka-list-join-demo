@@ -97,7 +97,7 @@ public class PreProcessorSupplier<TOuter> implements ProcessorSupplier<String, T
          * @param record the record to process
          */
         @Override
-        public void process(org.apache.kafka.streams.processor.api.Record<String, TOuter> record) {
+        public void process(Record<String, TOuter> record) {
 
             // in case of tombstone or empty list, this map is empty
             Map<String, TOuter> flatValuesMap = flatMapper.apply(record.value()).stream()
