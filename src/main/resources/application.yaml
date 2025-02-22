@@ -1,0 +1,7 @@
+spring:
+  application.name: list-join-demo
+  cloud:
+    stream:
+      kafka.streams.binder:
+        configuration:
+          schema.registry.url: mock://schema-registry

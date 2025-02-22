@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package list_join_demo;
+
+option java_multiple_files = true;
+option java_package = "ch.ipt.jkl.listjoindemo.proto";
+
+message Outer {
+  string id = 1;
+  string some_text = 2;
+  uint32 some_number = 3;
+  repeated Inner inner = 4;
+}
+
+message Inner {
+  string id = 1;
+  string name = 2;
+  uint32 age = 3;
+}
