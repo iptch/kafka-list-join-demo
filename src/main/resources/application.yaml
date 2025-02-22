@@ -1,5 +1,5 @@
 spring:
-  application.name: list-join-demo
+  application.name: kafka-list-join-demo
   cloud:
     stream:
       kafka.streams.binder:
