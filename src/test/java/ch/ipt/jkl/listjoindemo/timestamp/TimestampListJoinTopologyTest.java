@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
@@ -39,6 +41,30 @@ class TimestampListJoinTopologyTest {
     private TestInputTopic<String, Outer> outerInputTopic;
     private TestInputTopic<String, Inner> innerInputTopic;
     private TestOutputTopic<String, Outer> outerOutputTopic;
+
+    // some static test data
+    private final Inner INNER_01 = Inner.newBuilder()
+                .setId("inner01")
+                .setName("Alice")
+                .setAge(94)
+                .build();
+    private final Inner INNER_02 = Inner.newBuilder()
+            .setId("inner02")
+            .setName("Bob")
+            .setAge(95)
+            .build();
+    private final Inner INNER_03 = Inner.newBuilder()
+            .setId("inner03")
+            .setName("Charlie")
+            .setAge(23)
+            .build();
+    private final Outer OUTER_01 = Outer.newBuilder()
+            .setId("outer01")
+            .setSomeText("this is some text")
+            .setSomeNumber(42)
+            .addInner(Inner.newBuilder().setId(INNER_01.getId()))
+            .addInner(Inner.newBuilder().setId(INNER_02.getId()))
+            .build();
 
     @BeforeEach
     void beforeEach() {
@@ -71,33 +97,130 @@ class TimestampListJoinTopologyTest {
     }
 
     @Test
-    @DisplayName("Basic happy path")
-    void testCurrentListJoin() {
-        Inner inner1 = Inner.newBuilder()
-                .setId("inner01")
-                .setName("Alice")
-                .setAge(94)
-                .build();
-        Inner inner2 = Inner.newBuilder()
-                .setId("inner02")
-                .setName("Bob")
-                .setAge(95)
-                .build();
+    @DisplayName("basic happy path")
+    void testListJoin() {
+        innerInputTopic.pipeInput(INNER_01.getId(), INNER_01);
+        innerInputTopic.pipeInput(INNER_02.getId(), INNER_02);
+        innerInputTopic.pipeInput(INNER_03.getId(), INNER_03);
+        outerInputTopic.pipeInput(OUTER_01.getId(), OUTER_01);
 
-        Outer outer = Outer.newBuilder()
-                .setId("outer01")
-                .addInner(Inner.newBuilder().setId(inner1.getId()).build())
-                .addInner(Inner.newBuilder().setId(inner2.getId()).build())
-                .build();
-
-        innerInputTopic.pipeInput(inner1.getId(), inner1);
-        innerInputTopic.pipeInput(inner2.getId(), inner2);
-        outerInputTopic.pipeInput(outer.getId(), outer);
-
-        Outer result = outerOutputTopic.readKeyValuesToMap().get(outer.getId());
+        Outer result = outerOutputTopic.readKeyValuesToMap().get(OUTER_01.getId());
 
         assertThat(result.getInnerList()).hasSize(2);
+        assertThat(result.getInnerList().get(0).getId()).isEqualTo("inner01");
         assertThat(result.getInnerList().get(0).getName()).isEqualTo("Alice");
+        assertThat(result.getInnerList().get(1).getId()).isEqualTo("inner02");
         assertThat(result.getInnerList().get(1).getName()).isEqualTo("Bob");
+    }
+
+    @Test
+    @DisplayName("inner becomes available later")
+    void testListJoinInnerUnavailable() {
+        outerInputTopic.pipeInput(OUTER_01.getId(), OUTER_01);
+
+        Outer result = outerOutputTopic.readKeyValuesToMap().get(OUTER_01.getId());
+
+        assertThat(result.getInnerList()).hasSize(2);
+        assertThat(result.getInnerList().get(0).getId()).isEqualTo("inner01");
+        assertThat(result.getInnerList().get(0).getName()).isEmpty();
+        assertThat(result.getInnerList().get(1).getId()).isEqualTo("inner02");
+        assertThat(result.getInnerList().get(1).getName()).isEmpty();
+
+        innerInputTopic.pipeInput(INNER_01.getId(), INNER_01);
+        innerInputTopic.pipeInput(INNER_02.getId(), INNER_02);
+
+        result = outerOutputTopic.readKeyValuesToMap().get(OUTER_01.getId());
+
+        assertThat(result.getInnerList()).hasSize(2);
+        assertThat(result.getInnerList().get(0).getId()).isEqualTo("inner01");
+        assertThat(result.getInnerList().get(0).getName()).isEqualTo("Alice");
+        assertThat(result.getInnerList().get(1).getId()).isEqualTo("inner02");
+        assertThat(result.getInnerList().get(1).getName()).isEqualTo("Bob");
+    }
+
+    @Test
+    @DisplayName("handle empty list")
+    void testListJoinEmptyList() {
+        Outer outer = OUTER_01.toBuilder()
+                .clearInner()
+                .build();
+
+        outerInputTopic.pipeInput(outer.getId(), outer);
+
+        Outer result = outerOutputTopic.readKeyValuesToMap().get(OUTER_01.getId());
+
+        assertThat(result.getInnerList()).isEmpty();
+        assertThat(result.getSomeNumber()).isEqualTo(42);
+    }
+
+    @Test
+    @DisplayName("handle and forward tombstone")
+    void testListJoinTombstone() {
+        outerInputTopic.pipeInput(OUTER_01.getId(), null);
+
+        Map<String, Outer> resultMap = outerOutputTopic.readKeyValuesToMap();
+
+        assertThat(resultMap)
+                .hasSize(1)
+                .containsKey(OUTER_01.getId())
+                .containsValue(null);
+    }
+
+    @Test
+    @DisplayName("update of fields other than the list")
+    void testListJoinUpdateOther() {
+        innerInputTopic.pipeInput(INNER_01.getId(), INNER_01);
+        innerInputTopic.pipeInput(INNER_02.getId(), INNER_02);
+        outerInputTopic.pipeInput(OUTER_01.getId(), OUTER_01);
+
+        Outer result = outerOutputTopic.readKeyValuesToMap().get(OUTER_01.getId());
+
+        assertThat(result.getInnerList()).hasSize(2);
+        assertThat(result.getSomeNumber()).isEqualTo(42);
+
+        Outer updatedOuter = OUTER_01.toBuilder()
+                .setSomeNumber(43)
+                .build();
+
+        outerInputTopic.pipeInput(updatedOuter.getId(), updatedOuter);
+
+        result = outerOutputTopic.readKeyValuesToMap().get(OUTER_01.getId());
+
+        assertThat(result.getInnerList()).hasSize(2);
+        assertThat(result.getSomeNumber()).isEqualTo(43);
+    }
+
+    @Test
+    @DisplayName("addition and removal of list elements")
+    void testListJoinUpdateList() {
+        innerInputTopic.pipeInput(INNER_01.getId(), INNER_01);
+        innerInputTopic.pipeInput(INNER_02.getId(), INNER_02);
+        innerInputTopic.pipeInput(INNER_03.getId(), INNER_03);
+
+        outerInputTopic.pipeInput(OUTER_01.getId(), OUTER_01);
+
+        Outer result = outerOutputTopic.readKeyValuesToMap().get(OUTER_01.getId());
+
+        assertThat(result.getInnerList()).hasSize(2);
+        assertThat(result.getInnerList().get(0).getId()).isEqualTo("inner01");
+        assertThat(result.getInnerList().get(0).getName()).isEqualTo("Alice");
+        assertThat(result.getInnerList().get(1).getId()).isEqualTo("inner02");
+        assertThat(result.getInnerList().get(1).getName()).isEqualTo("Bob");
+
+        Outer updatedOuter = OUTER_01.toBuilder()
+                .clearInner()
+                .addInner(Inner.newBuilder().setId(INNER_01.getId()))
+                .addInner(Inner.newBuilder().setId(INNER_03.getId()))
+                .build();
+
+        outerInputTopic.pipeInput(updatedOuter.getId(), updatedOuter);
+
+        result = outerOutputTopic.readKeyValuesToMap().get(OUTER_01.getId());
+
+        assertThat(result.getInnerList()).hasSize(2);
+        assertThat(result.getInnerList().get(0).getId()).isEqualTo("inner01");
+        assertThat(result.getInnerList().get(0).getName()).isEqualTo("Alice");
+        assertThat(result.getInnerList().get(1).getId()).isEqualTo("inner03");
+        assertThat(result.getInnerList().get(1).getName()).isEqualTo("Charlie");
     }
 }
