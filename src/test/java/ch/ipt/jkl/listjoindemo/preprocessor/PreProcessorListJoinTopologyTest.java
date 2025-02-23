@@ -1,4 +1,4 @@
-package ch.ipt.jkl.listjoindemo.current;
+package ch.ipt.jkl.listjoindemo.preprocessor;
 
 import ch.ipt.jkl.listjoindemo.Util;
 import ch.ipt.jkl.listjoindemo.proto.Inner;
@@ -22,8 +22,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
-@SpringBootTest(classes = {Util.class, CurrentListJoinTopology.class})
-class CurrentListJoinTest {
+@SpringBootTest(classes = {Util.class, PreProcessorListJoinTopology.class})
+class PreProcessorListJoinTopologyTest {
 
     private TopologyTestDriver topologyTestDriver;
 
@@ -34,7 +34,7 @@ class CurrentListJoinTest {
     KafkaProtobufSerde<Inner> innerSerde;
 
     @Autowired
-    CurrentListJoinTopology currentListJoinTopology;
+    PreProcessorListJoinTopology preProcessorListJoinTopology;
 
     private TestInputTopic<String, Outer> outerInputTopic;
     private TestInputTopic<String, Inner> innerInputTopic;
@@ -51,7 +51,7 @@ class CurrentListJoinTest {
         KStream<String, Outer> outerKStream = builder.stream(outerInputTopicName, Consumed.with(stringSerde, outerSerde));
         KTable<String, Inner> innerKTable = builder.table(innerInputTopicName, Consumed.with(stringSerde, innerSerde));
 
-        KStream<String, Outer> outerOutputStream = currentListJoinTopology.currentListJoin()
+        KStream<String, Outer> outerOutputStream = preProcessorListJoinTopology.currentListJoin()
                 .apply(outerKStream, innerKTable);
         outerOutputStream.to(outerOutputTopicName, Produced.with(stringSerde, outerSerde));
 

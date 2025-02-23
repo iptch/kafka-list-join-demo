@@ -1,6 +1,6 @@
-package ch.ipt.jkl.listjoindemo.current;
+package ch.ipt.jkl.listjoindemo.preprocessor;
 
-import ch.ipt.jkl.listjoindemo.current.operator.*;
+import ch.ipt.jkl.listjoindemo.preprocessor.operator.*;
 import ch.ipt.jkl.listjoindemo.proto.Inner;
 import ch.ipt.jkl.listjoindemo.proto.Outer;
 import io.confluent.kafka.streams.serdes.protobuf.KafkaProtobufSerde;
@@ -19,7 +19,7 @@ import static ch.ipt.jkl.listjoindemo.Util.buildStore;
 
 @Configuration
 @RequiredArgsConstructor
-public class CurrentListJoinTopology {
+public class PreProcessorListJoinTopology {
 
     private final KafkaProtobufSerde<Outer> outerSerde;
 

@@ -1,4 +1,4 @@
-package ch.ipt.jkl.listjoindemo.current.operator;
+package ch.ipt.jkl.listjoindemo.preprocessor.operator;
 
 import com.google.common.collect.Sets;
 import lombok.RequiredArgsConstructor;
@@ -128,8 +128,9 @@ public class PreProcessorSupplier<TOuter> implements ProcessorSupplier<String, T
                 forward(record.key(), removedId, null);
             }
 
-            // if the new list is empty delete the list from the store and send tombstone for empty list record
-            // otherwise save new list and send empty list record
+            // if the current list is empty delete the list from the store and send a tombstone
+            // for the empty list record, otherwise save the current list and send an empty list
+            // record to propagate changes to other fields
             if (newIds.isEmpty()) {
                 forward(record.key(), null, null);
                 listStore.put(record.key(), null);

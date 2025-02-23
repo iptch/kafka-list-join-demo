@@ -1,4 +1,4 @@
-package ch.ipt.jkl.listjoindemo.current.operator;
+package ch.ipt.jkl.listjoindemo.preprocessor.operator;
 
 import ch.ipt.jkl.listjoindemo.proto.Inner;
 import ch.ipt.jkl.listjoindemo.proto.Outer;
