@@ -12,6 +12,8 @@ message Outer {
   string some_text = 2;
   uint32 some_number = 3;
   repeated Inner inner = 4;
+
+  // only needed for the timestamp based approach
   google.protobuf.Timestamp last_edited = 5;
 }
 
