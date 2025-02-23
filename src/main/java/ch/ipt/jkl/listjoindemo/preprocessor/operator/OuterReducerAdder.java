@@ -8,7 +8,7 @@ public class OuterReducerAdder implements Reducer<Outer> {
     @Override
     public Outer apply(Outer currentValue, Outer newValue) {
         if (newValue.getInnerList().isEmpty()) {
-            // if list is empty update all fields other than list
+            // if list is empty update all fields other than the list
             return newValue.toBuilder()
                     .addAllInner(currentValue.getInnerList())
                     .build();

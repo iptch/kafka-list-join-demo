@@ -11,9 +11,7 @@ public class OuterReducerRemover implements Reducer<Outer> {
     @Override
     public Outer apply(Outer currentValue, Outer oldValue) {
         // if oldValue inner list is empty, there is nothing to do. The adder handles empty list updates
-        if (oldValue.getInnerList().isEmpty()) {
-            return currentValue;
-        }
+        if (oldValue.getInnerList().isEmpty()) return currentValue;
 
         // Remove the single inner value from the current list (in this case we do it by id)
         Inner innerToRemove = oldValue.getInnerList().getFirst();
