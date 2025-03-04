@@ -6,7 +6,7 @@ in the KTable.
 
 This image shows the high level idea, joining a persons address list, with the corresponding addresses:
 
-![List join overview](ListJoin.png)
+![List join overview](/ListJoin.png)
 
 Check out `TODO: add link` for a discussion of the approaches.
 
