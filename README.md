@@ -8,7 +8,9 @@ This image shows the high level idea, joining a persons address list, with the c
 
 ![List join overview](/ListJoin.png)
 
-Check out `TODO: add link` for a discussion of the approaches.
+Check out `TODO: add link once published` for a discussion of the approaches.
+
+The tests should cover all relevant cases of message ordering and updates.
 
 ## Building
 
