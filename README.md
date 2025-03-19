@@ -8,7 +8,8 @@ This image shows the high level idea, joining a persons address list, with the c
 
 ![List join overview](/ListJoin.png)
 
-Check out `TODO: add link once published` for a discussion of the approaches.
+Check out [this blog post](https://dev.to/ipt/how-to-join-lists-in-kafka-streams-applications-1h28) for a discussion of
+the approaches.
 
 The tests should cover all relevant cases of message ordering and updates.
 
